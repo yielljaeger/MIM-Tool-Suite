@@ -1,0 +1,441 @@
+
+<!DOCTYPE html>
+
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>MIM Tools Suite</title>
+<style>
+        body {
+            font-family: Arial, sans-serif;
+        }
+    .header {
+        display: flex;
+        align-items: center;
+        background-color: #004080;
+        padding: 10px;
+        color: white;
+    }
+        .header img {
+            height: 50px;
+            margin-right: 20px;
+        }
+    .tabs {
+        display: flex;
+        cursor: pointer;
+        background-color: #7B7B7B;
+        padding: 10px;
+    }
+        .tab {
+            padding: 10px;
+            margin-right: 10px;
+            background-color: #ddd;
+            border-radius: 5px;
+        }
+        .tab.active {
+            background-color: #0033a0;
+            color: white;
+        }
+        .content {
+            padding: 20px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            margin-top: 10px;
+        }
+        .content > div {
+            display: none;
+        }
+        .content > div.active {
+            display: block;
+        }
+    </style>
+</head>
+<body>
+<div class="header">
+<img alt="Teleperformance Logo" src="Teleperformance Logo.png"/>
+<h1>MIM Tools Suite</h1>
+</div>
+<div class="tabs">
+<div class="tab" onclick="showTab('general')">General Helper</div>
+<div class="tab" onclick="showTab('notification')">Notification Helper</div>
+<div class="tab" onclick="showTab('pir')">PIR Checklist</div>
+</div>
+<div class="content">
+<div class="tab-content" id="general">
+<!-- General Helper Content -->
+
+<!DOCTYPE html>
+
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<title>Outage Helper</title>
+<style>
+    body { font-family: Arial; padding: 20px; }
+    .timer { font-size: 2em; font-weight: bold; margin-top: 10px; }
+    .green { color: green; }
+    .yellow { color: orange; }
+    .red { color: red; }
+    .section { margin-bottom: 20px; }
+  </style>
+</head>
+<body>
+<h2>Outage Helper</h2>
+<div class="section">
+<h3>Impact Section</h3>
+<label>Agents Affected:</label>
+<input id="agentsAffected" min="0" oninput="calculateImpact()" type="number"/><br/><br/>
+<label>Agents Total Staffed:</label>
+<input id="agentsTotalStaffed" min="0" oninput="calculateImpact()" type="number"/><br/><br/>
+<label>Calculated Impact Percentage:</label>
+<span id="impactPercentage">--</span>
+</div>
+<div class="section">
+<h3>Urgency Section</h3>
+<label>Tool Type:</label>
+<select id="toolType" onchange="calculateUrgency()">
+<option value="Call">Call</option>
+<option value="Chat">Chat</option>
+<option value="Email">Email</option>
+<option value="Critical Tool">Critical Tool</option>
+<option value="Major Tool">Major Tool</option>
+<option value="Minor Tool">Minor Tool</option>
+</select><br/><br/>
+<label>Severity:</label>
+<select id="severity" onchange="calculateUrgency()">
+<option value="Completely Down">Completely Down</option>
+<option value="High Impact">High Impact</option>
+<option value="Partial Impact">Partial Impact</option>
+<option value="Intermittent">Intermittent</option>
+<option value="Workaround Available">Workaround Available</option>
+</select><br/><br/>
+<label>Calculated Urgency:</label>
+<span id="urgencyPercentage">--</span>
+</div>
+<div class="section">
+<h3>Priority Section</h3>
+<label>Calculated Priority:</label>
+<span id="priority">--</span>
+</div>
+<div class="section">
+<h3>Timer Section</h3>
+<button id="timerButton" onclick="startPromotionTimer()">Ticket Promoted?</button>
+<div class="timer" id="slaTimer">SLA Timer: --:--</div>
+</div>
+<script>
+    let timerInterval;
+
+    function calculateImpact() {
+      const agentsAffected = parseFloat(document.getElementById('agentsAffected').value);
+      const agentsTotalStaffed = parseFloat(document.getElementById('agentsTotalStaffed').value);
+      let impactPercentage = '--';
+
+      if (!isNaN(agentsAffected) && !isNaN(agentsTotalStaffed) && agentsTotalStaffed > 0) {
+        impactPercentage = ((agentsAffected / agentsTotalStaffed) * 100).toFixed(2) + '%';
+      }
+
+      document.getElementById('impactPercentage').innerText = impactPercentage;
+      calculatePriority();
+  checkXMMessage(); // <-- Add this line
+
+    }
+
+    function calculateUrgency() {
+      const toolType = document.getElementById('toolType').value;
+      const severity = document.getElementById('severity').value;
+      let urgencyPercentage = '--';
+
+      const urgencyMatrix = {
+        'Call': { 'Completely Down': 100, 'High Impact': 75, 'Partial Impact': 50, 'Intermittent': 30, 'Workaround Available': 20, 'Minor Impact': 10, 'Negligible': 5, 'No Impact': 0 },
+        'Chat': { 'Completely Down': 100, 'High Impact': 75, 'Partial Impact': 50, 'Intermittent': 30, 'Workaround Available': 20, 'Minor Impact': 10, 'Negligible': 5, 'No Impact': 0 },
+        'Email': { 'Completely Down': 100, 'High Impact': 75, 'Partial Impact': 50, 'Intermittent': 30, 'Workaround Available': 20, 'Minor Impact': 10, 'Negligible': 5, 'No Impact': 0 },
+        'Critical Tool': { 'Completely Down': 100, 'High Impact': 75, 'Partial Impact': 50, 'Intermittent': 30, 'Workaround Available': 20, 'Minor Impact': 10, 'Negligible': 5, 'No Impact': 0 },
+        'Major Tool': { 'Completely Down': 100, 'High Impact': 75, 'Partial Impact': 50, 'Intermittent': 30, 'Workaround Available': 20, 'Minor Impact': 10, 'Negligible': 5, 'No Impact': 0 },
+        'Minor Tool': { 'Completely Down': 100, 'High Impact': 75, 'Partial Impact': 50, 'Intermittent': 30, 'Workaround Available': 20, 'Minor Impact': 10, 'Negligible': 5, 'No Impact': 0 }
+      };
+
+      urgencyPercentage = urgencyMatrix[toolType][severity] + '%';
+      document.getElementById('urgencyPercentage').innerText = urgencyPercentage;
+      calculatePriority();
+  checkXMMessage(); // <-- Add this line
+
+    }
+
+    function calculatePriority() {
+      const impactPercentage = parseFloat(document.getElementById('impactPercentage').innerText);
+      const urgencyPercentage = parseFloat(document.getElementById('urgencyPercentage').innerText);
+      let priority = '--';
+
+      if (!isNaN(impactPercentage) && !isNaN(urgencyPercentage)) {
+        if (impactPercentage >= 50) {
+          if (urgencyPercentage >= 75) priority = 'P1';
+          else if (urgencyPercentage >= 50) priority = 'P2';
+          else priority = 'P3';
+        } else if (impactPercentage >= 10) {
+          if (urgencyPercentage >= 75) priority = 'P2';
+          else priority = 'P3';
+        } else {
+          priority = 'P4';
+        }
+      }
+
+      document.getElementById('priority').innerText = priority;
+    }
+
+    function startPromotionTimer() {
+      clearInterval(timerInterval);
+      const display = document.getElementById('slaTimer');
+      let timer = 15 * 60;
+      document.getElementById('timerButton').innerText = 'Initial Notification Sent';
+      document.getElementById('timerButton').onclick = startNotificationTimer;
+
+      timerInterval = setInterval(() => {
+        const minutes = Math.floor(timer / 60);
+        const seconds = timer % 60;
+        display.textContent = `SLA Timer: ${minutes}:${seconds < 10 ? '0' : ''}${seconds}`;
+
+        if (timer <= 300 && timer > 0) {
+          display.className = 'timer yellow';
+        } else if (timer <= 0) {
+          display.className = 'timer red';
+          display.textContent = 'SLA Breached!';
+          clearInterval(timerInterval);
+        } else {
+          display.className = 'timer green';
+        }
+
+        timer--;
+      }, 1000);
+    }
+
+    function startNotificationTimer() {
+      clearInterval(timerInterval);
+      const priority = document.getElementById('priority').innerText;
+      const display = document.getElementById('slaTimer');
+      let timer = (priority === 'P1' || priority === 'P2') ? 30 * 60 : 60 * 60;
+      document.getElementById('timerButton').innerText = 'Notification Sent';
+      document.getElementById('timerButton').onclick = resetNotificationTimer;
+
+      timerInterval = setInterval(() => {
+        const minutes = Math.floor(timer / 60);
+        const seconds = timer % 60;
+        display.textContent = `SLA Timer: ${minutes}:${seconds < 10 ? '0' : ''}${seconds}`;
+
+        if (timer <= 300 && timer > 0) {
+          display.className = 'timer yellow';
+        } else if (timer <= 0) {
+          display.className = 'timer red';
+          display.textContent = 'SLA Breached!';
+          clearInterval(timerInterval);
+        } else {
+          display.className = 'timer green';
+        }
+
+        timer--;
+      }, 1000);
+    }
+
+    function resetNotificationTimer() {
+      clearInterval(timerInterval);
+      const priority = document.getElementById('priority').innerText;
+      const display = document.getElementById('slaTimer');
+      let timer = (priority === 'P1' || priority === 'P2') ? 30 * 60 : 60 * 60;
+
+      timerInterval = setInterval(() => {
+        const minutes = Math.floor(timer / 60);
+        const seconds = timer % 60;
+        display.textContent = `SLA Timer: ${minutes}:${seconds < 10 ? '0' : ''}${seconds}`;
+
+        if (timer <= 300 && timer > 0) {
+          display.className = 'timer yellow';
+        } else if (timer <= 0) {
+          display.className = 'timer red';
+          display.textContent = 'SLA Breached!';
+          clearInterval(timerInterval);
+        } else {
+          display.className = 'timer green';
+        }
+
+        timer--;
+      }, 1000);
+    }
+  
+function checkXMMessage() {
+  const isLobDown = document.getElementById('lobDown').value === 'Yes';
+  const agentsAffected = parseFloat(document.getElementById('agentsAffected').value);
+  const messageBox = document.getElementById('xmMessage');
+
+  if (isLobDown) {
+    if (!isNaN(agentsAffected) && agentsAffected >= 500) {
+      messageBox.innerText = 'Please Send Mega 01 xM';
+    } else {
+      messageBox.innerText = 'Please Send Major 02 xM';
+    }
+  } else {
+    messageBox.innerText = '--';
+  }
+}
+
+</script>
+<div class="section">
+<h3>xM Section</h3>
+<label>Is LOB Down?</label>
+<select id="lobDown" onchange="checkXMMessage()">
+<option value="No">No</option>
+<option value="Yes">Yes</option>
+</select><br/><br/>
+<div id="xmMessage" style="font-weight: bold; color: blue;">--</div>
+</div>
+</body>
+</html>
+</div>
+<div class="tab-content" id="notification">
+<!-- Notification Helper Content -->
+
+<!DOCTYPE html>
+
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>MIM Outage Helper</title>
+<style>
+        .editable {
+            border: 1px solid #ccc;
+            padding: 10px;
+            margin-bottom: 10px;
+            min-height: 50px;
+        }
+        .button {
+            padding: 10px 20px;
+            background-color: #007BFF;
+            color: white;
+            border: none;
+            cursor: pointer;
+        }
+        .button:hover {
+            background-color: #0056b3;
+        }
+    </style>
+</head>
+<body>
+<h1>MIM Outage Helper</h1>
+<h2>Operational Status:</h2>
+<div class="editable" contenteditable="true" id="operationalStatus" onclick="clearText(this)">What is the current status in operations? Is the issue ongoing?</div>
+<h2>Technical Status:</h2>
+<div class="editable" contenteditable="true" id="technicalStatus" onclick="clearText(this)">What is the current troubleshooting step taken?</div>
+<h2>Action Plans / Next Step:</h2>
+<div class="editable" contenteditable="true" id="actionPlans" onclick="clearText(this)">Are there action plans? Do we have a next step?</div>
+<h2>Next Communications:</h2>
+<div class="editable" contenteditable="true" id="nextCommunications" onclick="clearText(this)">Updates will be sent on any status change.</div>
+<button class="button" onclick="generateNotification()">Generate Notification</button>
+<h2>Generated Notification:</h2>
+<div class="editable" id="generatedNotification"></div>
+<script>
+        function clearText(element) {
+            element.innerText = '';
+        }
+
+        function generateNotification() {
+            const operationalStatus = document.getElementById('operationalStatus').innerText;
+            const technicalStatus = document.getElementById('technicalStatus').innerText;
+            const actionPlans = document.getElementById('actionPlans').innerText;
+            const nextCommunications = document.getElementById('nextCommunications').innerText;
+            
+            const notification = operationalStatus + ' ' + technicalStatus + ' ' + actionPlans + ' ' + nextCommunications;
+            document.getElementById('generatedNotification').innerText = notification;
+        }
+    </script>
+</body>
+</html>
+</div>
+<div class="tab-content" id="pir">
+<!-- PIR Checklist Content -->
+
+<!DOCTYPE html>
+
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<title>PIR Checklist Form</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js"></script>
+<style>
+    body { font-family: Arial, sans-serif; padding: 20px; }
+    table { width: 100%; border-collapse: collapse; margin-bottom: 20px; }
+    th, td { border: 1px solid #ccc; padding: 10px; text-align: left; }
+    th { background-color: #f2f2f2; }
+    select { width: 100%; }
+    button { padding: 10px 20px; font-size: 16px; }
+  </style>
+</head>
+<body>
+<h2>PIR Checklist Form</h2>
+<table id="pirForm">
+<thead>
+<tr>
+<th>PIR Checklist</th>
+<th>Status (Yes/NA/No)</th>
+</tr>
+</thead>
+<tbody>
+<tr><td>ECR Required?</td><td><select><option>Yes</option><option>No</option><option>NA</option></select></td></tr>
+<tr><td>Correct Outage Duration - Update Notifications</td><td><select><option>Yes</option><option>No</option><option>NA</option></select></td></tr>
+<tr><td>On - Hold Procedure Followed</td><td><select><option>Yes</option><option>No</option><option>NA</option></select></td></tr>
+<tr><td>Updated Impact Count</td><td><select><option>Yes</option><option>No</option><option>NA</option></select></td></tr>
+<tr><td>Complete MIM Notes Attached</td><td><select><option>Yes</option><option>No</option><option>NA</option></select></td></tr>
+<tr><td>Domain Artefacts is attached</td><td><select><option>Yes</option><option>No</option><option>NA</option></select></td></tr>
+<tr><td>Correct Ownership Selected</td><td><select><option>Yes</option><option>No</option><option>NA</option></select></td></tr>
+<tr><td>Resolution Notes/Probable Cause/Business Impact Filled</td><td><select><option>Yes</option><option>No</option><option>NA</option></select></td></tr>
+<tr><td>Response and Resolution SLA Verification</td><td><select><option>Yes</option><option>No</option><option>NA</option></select></td></tr>
+<tr><td>KB/KE Article Usage as per the Incident Description</td><td><select><option>Yes</option><option>No</option><option>NA</option></select></td></tr>
+</tbody>
+</table>
+<button onclick="saveAsPDF()">Save as PDF</button>
+<script>
+    async function saveAsPDF() {
+      const { jsPDF } = window.jspdf;
+      const doc = new jsPDF();
+
+      const rows = [];
+      document.querySelectorAll("#pirForm tbody tr").forEach(row => {
+        const cells = row.querySelectorAll("td");
+        const question = cells[0].innerText;
+        const answer = cells[1].querySelector("select").value;
+        rows.push([question, answer]);
+      });
+
+      doc.autoTable({
+        head: [['PIR Checklist', 'Status (Yes/NA/No)']],
+        body: rows,
+        startY: 20,
+        styles: { fontSize: 10 },
+        headStyles: { fillColor: [180, 180, 180] }
+      });
+
+      doc.save("PIR_Checklist_Form.pdf");
+    }
+  </script>
+</body>
+</html>
+</div>
+</div>
+<script>
+        function showTab(tabId) {
+            var tabs = document.querySelectorAll('.tab');
+            var contents = document.querySelectorAll('.tab-content');
+            tabs.forEach(function(tab) {
+                tab.classList.remove('active');
+            });
+            contents.forEach(function(content) {
+                content.classList.remove('active');
+            });
+            document.querySelector('.tab[onclick="showTab(\'' + tabId + '\')"]').classList.add('active');
+            document.getElementById(tabId).classList.add('active');
+        }
+        // Show the first tab by default
+        showTab('general');
+    </script>
+</body>
+</html>
